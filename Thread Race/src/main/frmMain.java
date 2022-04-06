@@ -16,13 +16,13 @@ import javax.swing.JLabel;
  */
 public class frmMain extends javax.swing.JFrame {
     
+    Monitores monitor = new Monitores();
+    int n = 3;
     int contador = 1;
     // Procesos
     Proceso hilo1;
     Proceso hilo2;
     Proceso hilo3;
-    // Región Crítica
-    int[] regionCritica = new int[3];
     int posicion = 0;
 
     /**
@@ -33,9 +33,6 @@ public class frmMain extends javax.swing.JFrame {
         this.hilo1 = new Proceso(lblNumeroHilo1);
         this.hilo2 = new Proceso(lblNumeroHilo2);
         this.hilo3 = new Proceso(lblNumeroHilo3);
-        regionCritica[0] = 0;
-        regionCritica[1] = 0;
-        regionCritica[2] = 0;
     }
     
     public class Proceso extends Thread {
@@ -53,16 +50,42 @@ public class frmMain extends javax.swing.JFrame {
             // Operaciones pre región crítica
             this.numeroAGenerar = (int)(Math.random()* 9 + 1);
             this.miEtiqueta.setText(String.valueOf(numeroAGenerar));
-            // Región crítica
-            regionCritica[posicion] = this.numeroAGenerar;
-            String contenidoRC = "[" + String.valueOf(regionCritica[0]) + "]";
-            contenidoRC += "[" + String.valueOf(regionCritica[1]) + "]";
-            contenidoRC += "[" + String.valueOf(regionCritica[2]) + "]";
-            lblRegionCritica.setText(contenidoRC);
-            posicion++;
-            // Operaciones post región crítica
+            try {
+                monitor.insertar(numeroAGenerar);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(frmMain.class.getName()).log(Level.SEVERE, null, ex);
+            }
             System.out.println("Proceso finalizado con status: 0");
         }
+    }
+    
+    class Monitores { 
+        private int regionCritica[] = new int[n];
+        
+        // constructor
+        public Monitores() {
+            regionCritica[0]=0;
+            regionCritica[1]=0;
+            regionCritica[2]=0;
+        }
+
+        @SuppressWarnings("empty-statement")
+        public synchronized void insertar(int numero) throws InterruptedException {
+            if (posicion == n) {
+                //Para dormir proceso
+                wait();
+            }
+            
+            else {
+                regionCritica[posicion] = numero;
+                String contenidoRC = "[" + String.valueOf(regionCritica[0]) + "]";
+                contenidoRC += "[" + String.valueOf(regionCritica[1]) + "]";
+                contenidoRC += "[" + String.valueOf(regionCritica[2]) + "]";
+                lblRegionCritica.setText(contenidoRC);
+                posicion++;
+            }
+        }
+        
     }
 
     /**
